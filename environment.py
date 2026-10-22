@@ -165,10 +165,27 @@ class WumpusWorldEnvironment(gym.Env):
         # Ensuring that the agent doesn't go out of the environment.
         self.agent_pos = np.clip(self.agent_pos, a_min=[0, 0],
                                  a_max=[self.environment_width - 1, self.environment_height - 1])
+        self.timesteps+=1
+        #checks if any of the agent is on any of the pit positions,or on the wunpus position or hits the gold
+        on_pit = np.any(np.all(self.pit_pos == self.agent_pos, axis = 1))
+        on_wumpus = np.array_equal(self.agent_pos, self.wumpus_pos)
+        on_gold = np.array_equal(self.agent_pos,self.gold_pos) and self.gold_quantity > 0
+        reward,terminated,truncated = -0.01,False,False
 
+        #now we check if any of the condiitons are true and apply the appropiate reward and terminated/truncated status
+        #terminated: marks reaching the terminal state which is the gold. Truncated means we went over the max amount of timsteps we set(can be altered by programmer)
+        if on_pit or on_wumpus:
+            reward = -1.0
+            terminated = True
+        elif on_gold:
+            reward = 1.0
+            self.gold_quantity = 0
+            terminated = True
+        elif self.timesteps >= self.max_timesteps:
+            truncated = True
         observation = self.return_observation()
 
-        reward, terminated, truncated = None, None, None
+
         info = {}
 
         return observation, reward, terminated, truncated, info
